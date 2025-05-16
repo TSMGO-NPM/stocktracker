@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<style type="text/css">
+
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            position: relative;
+        }
+        h1 {
+            color: transparent;
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            -webkit-background-clip: text;
+            background-clip: text;
+            font-size: 2.5em;
+            margin: 0 auto;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            flex-grow: 1;
+            animation: fadeInScale 0.5s ease-in-out;
+        }
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .hamburger {
+            display: none;
+            font-size: 24px;
+            background: none;
+            border: none;
+            color: #2c3e50;
+            cursor: pointer;
+            position: absolute;
+            left: 10px;
+            top: 10px;
+        }
+        .hamburger-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200px;
+            height: 100%;
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            box-shadow: 4px 0 12px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .hamburger-menu.open {
+            display: block;
+            transform: translateX(0);
+        }
+        .hamburger-menu .language-switcher {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .language-switcher {
+            display: none;
+        }
+        .language-btn {
+            padding: 6px 9px;
+            border: none;
+            border-radius: 4px;
+            background: linear-gradient(135deg, #ecf0f1, #dfe6e9);
+            color: #2c3e50;
+            cursor: pointer;
+            font-size: 24px;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease, transform 0.2s ease;
+            width: 100%;
+        }
+        .language-btn.selected {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            box-shadow: 0 2px 4px rgba(52, 73, 94, 0.4);
+            transform: translateY(-1px);
+        }
+        .language-btn:hover {
+            background: linear-gradient(135deg, #dfe6e9, #d0d9dd);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px);
+        }
+        .language-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        .scope-bar {
+            display: flex;
+            gap: 8px;
+            background: linear-gradient(135deg, #ecf0f1, #dfe6e9);
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .scope-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #2c3e50;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease, transform 0.2s ease;
+        }
+        .scope-btn.selected {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+            transform: translateY(-2px);
+        }
+        .scope-btn:hover {
+            background: linear-gradient(135deg, #dfe6e9, #d0d9dd);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        .scope-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #dfe6e9;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background: #f8f9fa;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2c3e50;
+            box-shadow: 0 0 8px rgba(52, 73, 94, 0.3);
+        }
+        .toggle-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .toggle-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #ecf0f1, #dfe6e9);
+            color: #2c3e50;
+            text-align: center;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease, transform 0.2s ease;
+        }
+        .toggle-btn.buy.selected {
+            background: linear-gradient(135deg, #27ae60, #219653);
+            color: white;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+            transform: translateY(-2px);
+        }
+        .toggle-btn.sell.selected {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+            transform: translateY(-2px);
+        }
+        .toggle-btn:hover {
+            background: linear-gradient(135deg, #dfe6e9, #d0d9dd);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        .toggle-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        #addButton {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(52, 73, 94, 0.4);
+            transition: all 0.3s ease, transform 0.2s ease;
+        }
+        #addButton.update {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
+        }
+        #addButton:hover {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            box-shadow: 0 6px 16px rgba(52, 73, 94, 0.5);
+            transform: translateY(-2px);
+        }
+        #addButton.update:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            box-shadow: 0 6px 16px rgba(243, 156, 18, 0.5);
+        }
+        #addButton:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        #cancelButton {
+            display: none;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+            margin-top: 12px;
+            transition: all 0.3s ease, transform 0.2s ease;
+        }
+        #cancelButton:hover {
+            background: linear-gradient(135deg, #5a6268, #4a5258);
+            box-shadow: 0 6px 16px rgba(108, 117, 125, 0.5);
+            transform: translateY(-2px);
+        }
+        #cancelButton:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        #summary {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            gap: 20px;
+            flex-wrap: nowrap;
+        }
+        #summary div {
+            flex: 1;
+            padding: 10px;
+            border-right: 1px solid #dfe6e9;
+            min-width: 80px;
+        }
+        #summary div:last-child {
+            border-right: none;
+        }
+        #summary .label {
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 18px;
+            white-space: nowrap;
+        }
+        #summary .value {
+            font-size: 16px;
+            margin-top: 8px;
+            font-family: 'Courier New', monospace;
+            min-width: 80px;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .record-table, .holdings-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .record-table th, .record-table td, .holdings-table th, .holdings-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ecf0f1;
+            white-space: nowrap;
+        }
+        .record-table th, .holdings-table th {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 14px;
+        }
+        .record-table .stock-code, .holdings-table .stock-code {
+            font-weight: bold;
+            color: #2c3e50;
+            background-color: #f8f9fa;
+        }
+        .buy {
+            color: #27ae60;
+        }
+        .sell {
+            color: #e74c3c;
+        }
+        .delete-btn, .edit-btn, .sell-stock-btn {
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            width: 70px;
+            text-align: center;
+            margin-right: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease, transform 0.2s ease;
+        }
+        .edit-btn {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+        .edit-btn:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
+            transform: translateY(-2px);
+        }
+        .delete-btn {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+        }
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            box-shadow: 0 4px 12px rgba(52, 73, 94, 0.4);
+            transform: translateY(-2px);
+        }
+        .sell-stock-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        .sell-stock-btn:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+            transform: translateY(-2px);
+        }
+        .edit-btn:active, .delete-btn:active, .sell-stock-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        #chartContainer {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .stats-section {
+            margin: 20px 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .stats-section h3 {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 14px;
+            margin: 0;
+            text-align: center;
+        }
+        .stats-section canvas {
+            max-width: 100%;
+            padding: 20px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .controls select, .controls button, .controls input[type="text"] {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .controls button {
+            cursor: pointer;
+            color: white;
+        }
+        .filter-toggle {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+        .filter-toggle .toggle-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            background: linear-gradient(135deg, #ecf0f1, #dfe6e9);
+            color: #2c3e50;
+            border-radius: 8px;
+        }
+        #sortOrder, #filterStockCode {
+            flex: 1;
+            background: #f8f9fa;
+        }
+        #filter-all-btn, #filter-buy-btn, #filter-sell-btn {
+            transition: all 0.3s ease, transform 0.2s ease;
+        }
+        #filter-all-btn.selected {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+            transform: translateY(-2px);
+        }
+        #filter-buy-btn.selected {
+            background: linear-gradient(135deg, #27ae60, #219653);
+            color: white;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+            transform: translateY(-2px);
+        }
+        #filter-sell-btn.selected {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+            transform: translateY(-2px);
+        }
+        #filter-all-btn:hover, #filter-buy-btn:hover, #filter-sell-btn:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        #filter-all-btn:active, #filter-buy-btn:active, #filter-sell-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        #clearFilters {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+        }
+        #clearFilters:hover {
+            background: linear-gradient(135deg, #5a6268, #4a5258);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+            transform: translateY(-2px);
+        }
+        #clearFilters:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        #exportPdfBtn, #exportCsvBtn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease, transform 0.2s ease;
+            margin-top: 12px;
+        }
+        #exportPdfBtn {
+            background: linear-gradient(135deg, #28a745, #218838);
+        }
+        #exportCsvBtn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+        #exportPdfBtn:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.5);
+            transform: translateY(-2px);
+        }
+        #exportCsvBtn:hover {
+            background: linear-gradient(135deg, #0056b3, #003d82);
+            box-shadow: 0 6px 16px rgba(0, 123, 255, 0.5);
+            transform: translateY(-2px);
+        }
+        #exportPdfBtn:active, #exportCsvBtn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        #loadMoreBtn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #28a745, #218838);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+            margin-top: 20px;
+            transition: all 0.3s ease, transform 0.2s ease;
+        }
+        #loadMoreBtn:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.5);
+            transform: translateY(-2px);
+        }
+        #loadMoreBtn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        #loadMoreBtn.hidden {
+            display: none;
+        }
+        .portfolio-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .portfolio-table th, .portfolio-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ecf0f1;
+            white-space: nowrap;
+        }
+        .portfolio-table th {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 14px;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        @media (max-width: 500px) {
+            .container {
+                padding: 15px;
+            }
+            .header {
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                padding-bottom: 15px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .hamburger {
+                display: block;
+            }
+            .language-switcher {
+                display: none;
+            }
+            .scope-bar {
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 6px;
+            }
+            .scope-btn {
+                font-size: 12px;
+                padding: 8px;
+            }
+            .toggle-btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+            #addButton, #cancelButton, #exportPdfBtn, #exportCsvBtn, #loadMoreBtn {
+                font-size: 14px;
+                padding: 12px;
+            }
+            .toggle-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .record-table th, .record-table td, .portfolio-table th, .portfolio-table td, .holdings-table th, .holdings-table td {
+                font-size: 10px;
+                padding: 8px;
+            }
+            .delete-btn, .edit-btn, .sell-stock-btn {
+                width: 50px;
+                padding: 6px 8px;
+                font-size: 10px;
+            }
+            #summary {
+                flex-direction: row;
+                justify-content: space-between;
+                gap: 10px;
+                align-items: center;
+                flex-wrap: nowrap;
+                padding: 10px;
+            }
+            #summary div {
+                flex: 1;
+                border-right: 1px solid #dfe6e9;
+                border-bottom: none;
+                padding: 5px;
+                min-width: 80px;
+            }
+            #summary div:last-child {
+                border-right: none;
+            }
+            #summary .label {
+                font-size: 12px;
+                white-space: nowrap;
+            }
+            #summary .value {
+                font-size: 10px;
+                min-width: 60px;
+                white-space: nowrap;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-toggle {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            .filter-toggle .toggle-btn {
+                flex: 1;
+                min-width: 0;
+                padding: 8px;
+                font-size: 12px;
+            }
+            #sortOrder, #filterStockCode {
+                width: 100%;
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+        @media (min-width: 501px) {
+            .hamburger {
+                display: none;
+            }
+            .hamburger-menu {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="title">股海數簿</h1>
+            <button class="hamburger">☰</button>
+        </div>
+        <div class="hamburger-menu" id="hamburgerMenu">
+            <div class="language-switcher">
+                <button class="language-btn selected" data-lang="zh-TW">繁</button>
+                <button class="language-btn" data-lang="zh-CN">簡</button>
+                <button class="language-btn" data-lang="en">EN</button>
+            </div>
+        </div>
+        <div class="scope-bar">
+            <button class="scope-btn selected" data-tab="add">新增交易</button>
+            <button class="scope-btn" data-tab="records">交易記錄</button>
+            <button class="scope-btn" data-tab="overview">總覽與分析</button>
+        </div>
+        <div id="tab-add-content" class="tab-content active">
+            <div class="form-group">
+                <label id="type-label">交易類型</label>
+                <div class="toggle-group">
+                    <div class="toggle-btn buy selected" data-type="buy">買入</div>
+                    <div class="toggle-btn sell" data-type="sell">賣出</div>
+                </div>
+            </div>
+            <div id="holdings-table-container" style="display: none;">
+                <h3 id="holdings-label">持有股票</h3>
+                <div class="table-container">
+                    <table class="holdings-table">
+                        <thead>
+                            <tr>
+                                <th id="holdings-stock-code">股票代碼</th>
+                                <th id="holdings-shares">持有數量</th>
+                                <th id="holdings-buy-price">買入價格</th>
+                                <th id="holdings-buy-date">買入日期</th>
+                                <th id="holdings-actions">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdingsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="stockCode" id="stock-code-label">股票代碼</label>
+                <input type="text" id="stockCode" placeholder="股票代碼">
+            </div>
+            <div class="form-group">
+                <label for="price" id="price-label">每股價格</label>
+                <input type="number" id="price" placeholder="每股價格" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label for="quantity" id="quantity-label">數量</label>
+                <input type="number" id="quantity" placeholder="交易數量" min="1" step="1">
+            </div>
+            <div class="form-group">
+                <label for="fee" id="fee-label">手續費 (可選)</label>
+                <input type="number" id="fee" placeholder="手續費" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label for="note" id="note-label">備註 (可選)</label>
+                <input type="text" id="note" placeholder="備註">
+            </div>
+            <button id="addButton">添加交易</button>
+            <button id="cancelButton">取消修改</button>
+        </div>
+        <div id="tab-records-content" class="tab-content">
+            <div class="controls">
+                <select id="sortOrder">
+                    <option value="desc" id="sort-desc">日期降序</option>
+                    <option value="asc" id="sort-asc">日期升序</option>
+                </select>
+                <div class="filter-toggle">
+                    <div class="toggle-btn all selected" id="filter-all-btn" data-filter="all">全部</div>
+                    <div class="toggle-btn buy" id="filter-buy-btn" data-filter="buy">買入</div>
+                    <div class="toggle-btn sell" id="filter-sell-btn" data-filter="sell">賣出</div>
+                </div>
+                <input type="text" id="filterStockCode" placeholder="輸入股票代碼">
+                <button id="clearFilters">清除條件</button>
+            </div>
+            <div class="table-container">
+                <table class="record-table">
+                    <thead>
+                        <tr>
+                            <th id="table-date">日期</th>
+                            <th id="table-stock-code">股票代碼</th>
+                            <th id="table-type">類型</th>
+                            <th id="table-price">每股價格</th>
+                            <th id="table-quantity">數量</th>
+                            <th id="table-fee">手續費</th>
+                            <th id="table-note">備註</th>
+                            <th id="table-actions">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordTableBody"></tbody>
+                </table>
+            </div>
+            <button id="loadMoreBtn" class="hidden">更多</button>
+        </div>
+        <div id="tab-overview-content" class="tab-content">
+            <div id="summary">
+                <div>
+                    <div class="label" id="total-invested-label">總投資</div>
+                    <div class="value">0</div>
+                </div>
+                <div>
+                    <div class="label" id="realized-pl-label">已實現損益</div>
+                    <div class="value">0</div>
+                </div>
+                <div>
+                    <div class="label" id="portfolio-value-label">投資組合價值</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+            <div class="stats-section">
+                <h3 id="portfolio-composition">持倉比例</h3>
+                <canvas id="portfolioPieChart"></canvas>
+            </div>
+            <div class="table-container">
+                <table class="portfolio-table">
+                    <thead>
+                        <tr>
+                            <th id="portfolio-stock-code">股票代碼</th>
+                            <th id="portfolio-shares">持有數量</th>
+                            <th id="portfolio-buy-price">買入價格</th>
+                            <th id="portfolio-buy-date">買入日期</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolioTableBody"></tbody>
+                </table>
+            </div>
+            <div id="chartContainer">
+                <h3 id="portfolio-value-over-time">投資組合價值隨時間變化</h3>
+                <canvas id="portfolioValueChart"></canvas>
+            </div>
+            <button id="exportPdfBtn">導出 PDF</button>
+            <button id="exportCsvBtn">匯出 CSV</button>
+        </div>
+    </div>
+
+    <script>
+        let portfolioValueChart, portfolioPieChart;
+        let currentType = 'buy';
+        let editingIndex = null;
+        let filterType = 'all';
+        let displayedRecordsCount = 30;
+        const recordsPerPage = 30;
+        const { jsPDF } = window.jspdf;
+        let currentLanguage = 'zh-TW';
+        let currentTab = 'add';
+
+        const translations = {
+            'zh-TW': {
+                title: '股票追蹤器',
+                tab_add: '新增交易',
+                tab_records: '交易記錄',
+                tab_overview: '總覽與分析',
+                type_label: '交易類型',
+                buy_btn: '買入',
+                sell_btn: '賣出',
+                stock_code_label: '股票代碼',
+                stock_code_placeholder: '股票代碼',
+                price_label: '每股價格',
+                price_placeholder: '每股價格',
+                quantity_label: '數量',
+                quantity_placeholder: '交易數量',
+                fee_label: '手續費 (可選)',
+                fee_placeholder: '手續費',
+                note_label: '備註 (可選)',
+                note_placeholder: '備註',
+                add_button: '添加交易',
+                update_button: '更新交易',
+                cancel_button: '取消修改',
+                total_invested_label: '總投資',
+                realized_pl_label: '已實現損益',
+                portfolio_value_label: '投資組合價值',
+                sort_desc: '日期降序',
+                sort_asc: '日期升序',
+                filter_all: '全部',
+                filter_buy: '買入',
+                filter_sell: '賣出',
+                clear_filters: '清除條件',
+                export_csv: '匯出 CSV',
+                table_date: '日期',
+                table_stock_code: '股票代碼',
+                table_type: '類型',
+                table_price: '每股價格',
+                table_quantity: '數量',
+                table_fee: '手續費',
+                table_note: '備註',
+                table_actions: '操作',
+                edit_btn: '編輯',
+                delete_btn: '刪除',
+                load_more: '更多',
+                portfolio_composition: '持倉比例',
+                portfolio_value_over_time: '投資組合價值隨時間變化',
+                export_pdf: '導出 PDF',
+                portfolio_stock_code: '股票代碼',
+                portfolio_shares: '持有數量',
+                portfolio_buy_price: '買入價格',
+                portfolio_buy_date: '買入日期',
+                holdings_label: '持有股票',
+                holdings_stock_code: '股票代碼',
+                holdings_shares: '持有數量',
+                holdings_buy_price: '買入價格',
+                holdings_buy_date: '買入日期',
+                holdings_actions: '操作',
+                sell_stock_btn: '賣出',
+                confirm_delete: '確定要刪除這筆交易記錄嗎？',
+                invalid_input: '請輸入有效的股票代碼、價格和數量！',
+                insufficient_quantity: '賣出數量超過持有數量！',
+                record_not_found: '無法找到該記錄，請刷新頁面後重試！',
+                pdf_export_failed: '導出 PDF 失敗，請檢查！',
+                csv_export_failed: '匯出 CSV 失敗，請檢查！'
+            },
+            'zh-CN': {
+                title: '股票追踪器',
+                tab_add: '新增交易',
+                tab_records: '交易记录',
+                tab_overview: '总览与分析',
+                type_label: '交易类型',
+                buy_btn: '买入',
+                sell_btn: '卖出',
+                stock_code_label: '股票代码',
+                stock_code_placeholder: '股票代码',
+                price_label: '每股价格',
+                price_placeholder: '每股价格',
+                quantity_label: '数量',
+                quantity_placeholder: '交易数量',
+                fee_label: '手续费 (可选)',
+                fee_placeholder: '输入手续费',
+                note_label: '备注 (可选)',
+                note_placeholder: '输入备注',
+                add_button: '添加交易',
+                update_button: '更新交易',
+                cancel_button: '取消修改',
+                total_invested_label: '总投资',
+                realized_pl_label: '已实现损益',
+                portfolio_value_label: '投资组合价值',
+                sort_desc: '日期降序',
+                sort_asc: '日期升序',
+                filter_all: '全部',
+                filter_buy: '买入',
+                filter_sell: '卖出',
+                clear_filters: '清除条件',
+                export_csv: '导出 CSV',
+                table_date: '日期',
+                table_stock_code: '股票代码',
+                table_type: '类型',
+                table_price: '每股价格',
+                table_quantity: '数量',
+                table_fee: '手续费',
+                table_note: '备注',
+                table_actions: '操作',
+                edit_btn: '编辑',
+                delete_btn: '删除',
+                load_more: '更多',
+                portfolio_composition: '持仓比例',
+                portfolio_value_over_time: '投资组合价值随时间变化',
+                export_pdf: '导出 PDF',
+                portfolio_stock_code: '股票代码',
+                portfolio_shares: '持有数量',
+                portfolio_buy_price: '买入价格',
+                portfolio_buy_date: '买入日期',
+                holdings_label: '持有股票',
+                holdings_stock_code: '股票代码',
+                holdings_shares: '持有数量',
+                holdings_buy_price: '买入价格',
+                holdings_buy_date: '买入日期',
+                holdings_actions: '操作',
+                sell_stock_btn: '卖出',
+                confirm_delete: '确定要删除这笔交易记录吗？',
+                invalid_input: '请输入有效的股票代码、价格和数量！',
+                insufficient_quantity: '卖出数量超过持有数量！',
+                record_not_found: '无法找到该记录，请刷新页面后重试！',
+                pdf_export_failed: '导出 PDF 失败，请检查！',
+                csv_export_failed: '导出 CSV 失败，请检查！'
+            },
+            'en': {
+                title: '股海數簿',
+                tab_add: 'Add Transaction',
+                tab_records: 'Transaction Records',
+                tab_overview: 'Overview & Analysis',
+                type_label: 'Transaction Type',
+                buy_btn: 'Buy',
+                sell_btn: 'Sell',
+                stock_code_label: 'Stock Code',
+                stock_code_placeholder: 'Stock code',
+                price_label: 'Price per Share',
+                price_placeholder: 'Price per share',
+                quantity_label: 'Quantity',
+                quantity_placeholder: 'Enter quantity',
+                fee_label: 'Fee (Optional)',
+                fee_placeholder: 'Enter fee',
+                note_label: 'Note (Optional)',
+                note_placeholder: 'Enter note',
+                add_button: 'Add Transaction',
+                update_button: 'Update Transaction',
+                cancel_button: 'Cancel Edit',
+                total_invested_label: 'Total Invested',
+                realized_pl_label: 'Realized P/L',
+                portfolio_value_label: 'Portfolio Value',
+                sort_desc: 'Date Descending',
+                sort_asc: 'Date Ascending',
+                filter_all: 'All',
+                filter_buy: 'Buy',
+                filter_sell: 'Sell',
+                clear_filters: 'Clear Filters',
+                export_csv: 'Export CSV',
+                table_date: 'Date',
+                table_stock_code: 'Stock Code',
+                table_type: 'Type',
+                table_price: 'Price per Share',
+                table_quantity: 'Quantity',
+                table_fee: 'Fee',
+                table_note: 'Note',
+                table_actions: 'Actions',
+                edit_btn: 'Edit',
+                delete_btn: 'Delete',
+                load_more: 'Load More',
+                portfolio_composition: 'Portfolio Composition',
+                portfolio_value_over_time: 'Portfolio Value Over Time',
+                export_pdf: 'Export to PDF',
+                portfolio_stock_code: 'Stock Code',
+                portfolio_shares: 'Shares Held',
+                portfolio_buy_price: 'Buy Price',
+                portfolio_buy_date: 'Buy Date',
+                holdings_label: 'Holdings',
+                holdings_stock_code: 'Stock Code',
+                holdings_shares: 'Shares Held',
+                holdings_buy_price: 'Buy Price',
+                holdings_buy_date: 'Buy Date',
+                holdings_actions: 'Actions',
+                sell_stock_btn: 'Sell',
+                confirm_delete: 'Are you sure you want to delete this transaction?',
+                invalid_input: 'Please enter a valid stock code, price, and quantity!',
+                insufficient_quantity: 'Sell quantity exceeds available holdings!',
+                record_not_found: 'Record not found, please refresh and try again!',
+                pdf_export_failed: 'Failed to export PDF, please check!',
+                csv_export_failed: 'Failed to export CSV, please check!'
+            }
+        };
+
+        function formatNumber(number) {
+            return number.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+
+        function formatProfitLoss(number) {
+            if (number >= 0) {
+                return `<span style="color: #3498db;">+${number.toFixed(2)}</span>`;
+            } else {
+                return `<span style="color: #e74c3c;">-${Math.abs(number).toFixed(2)}</span>`;
+            }
+        }
+
+        function formatDate(date) {
+            const pad = (num) => String(num).padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+                   `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        }
+
+        function toggleHamburgerMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            menu.classList.toggle('open');
+        }
+
+        function switchTab(tab) {
+            if (currentTab === tab) return;
+            currentTab = tab;
+            document.querySelectorAll('.scope-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.tab === tab);
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `tab-${tab}-content`);
+            });
+            if (tab === 'records') {
+                displayRecords();
+            } else if (tab === 'overview') {
+                updateSummaryAndCharts();
+            } else if (tab === 'add') {
+                updateHoldingsTable();
+            }
+        }
+
+        function switchLanguage(lang) {
+            currentLanguage = lang;
+            document.querySelectorAll('.language-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.lang === lang);
+            });
+
+            const t = translations[lang];
+            document.getElementById('title').textContent = t.title;
+            document.querySelector('[data-tab="add"]').textContent = t.tab_add;
+            document.querySelector('[data-tab="records"]').textContent = t.tab_records;
+            document.querySelector('[data-tab="overview"]').textContent = t.tab_overview;
+            document.getElementById('type-label').textContent = t.type_label;
+            document.querySelector('[data-type="buy"]').textContent = t.buy_btn;
+            document.querySelector('[data-type="sell"]').textContent = t.sell_btn;
+            document.getElementById('stock-code-label').textContent = t.stock_code_label;
+            document.getElementById('stockCode').placeholder = t.stock_code_placeholder;
+            document.getElementById('price-label').textContent = t.price_label;
+            document.getElementById('price').placeholder = t.price_placeholder;
+            document.getElementById('quantity-label').textContent = t.quantity_label;
+            document.getElementById('quantity').placeholder = t.quantity_placeholder;
+            document.getElementById('fee-label').textContent = t.fee_label;
+            document.getElementById('fee').placeholder = t.fee_placeholder;
+            document.getElementById('note-label').textContent = t.note_label;
+            document.getElementById('note').placeholder = t.note_placeholder;
+            document.getElementById('addButton').textContent = editingIndex !== null ? t.update_button : t.add_button;
+            document.getElementById('cancelButton').textContent = t.cancel_button;
+            document.getElementById('total-invested-label').textContent = t.total_invested_label;
+            document.getElementById('realized-pl-label').textContent = t.realized_pl_label;
+            document.getElementById('portfolio-value-label').textContent = t.portfolio_value_label;
+            document.getElementById('sort-desc').textContent = t.sort_desc;
+            document.getElementById('sort-asc').textContent = t.sort_asc;
+            document.getElementById('filter-all-btn').textContent = t.filter_all;
+            document.getElementById('filter-buy-btn').textContent = t.filter_buy;
+            document.getElementById('filter-sell-btn').textContent = t.sell_btn;
+            document.getElementById('clearFilters').textContent = t.clear_filters;
+            document.getElementById('exportCsvBtn').textContent = t.export_csv;
+            document.getElementById('table-date').textContent = t.table_date;
+            document.getElementById('table-stock-code').textContent = t.table_stock_code;
+            document.getElementById('table-type').textContent = t.table_type;
+            document.getElementById('table-price').textContent = t.table_price;
+            document.getElementById('table-quantity').textContent = t.table_quantity;
+            document.getElementById('table-fee').textContent = t.table_fee;
+            document.getElementById('table-note').textContent = t.table_note;
+            document.getElementById('table-actions').textContent = t.table_actions;
+            document.getElementById('portfolio-composition').textContent = t.portfolio_composition;
+            document.getElementById('portfolio-value-over-time').textContent = t.portfolio_value_over_time;
+            document.getElementById('exportPdfBtn').textContent = t.export_pdf;
+            document.getElementById('loadMoreBtn').textContent = t.load_more;
+            document.getElementById('portfolio-stock-code').textContent = t.portfolio_stock_code;
+            document.getElementById('portfolio-shares').textContent = t.portfolio_shares;
+            document.getElementById('portfolio-buy-price').textContent = t.portfolio_buy_price;
+            document.getElementById('portfolio-buy-date').textContent = t.portfolio_buy_date;
+            document.getElementById('holdings-label').textContent = t.holdings_label;
+            document.getElementById('holdings-stock-code').textContent = t.holdings_stock_code;
+            document.getElementById('holdings-shares').textContent = t.holdings_shares;
+            document.getElementById('holdings-buy-price').textContent = t.holdings_buy_price;
+            document.getElementById('holdings-buy-date').textContent = t.holdings_buy_date;
+            document.getElementById('holdings-actions').textContent = t.holdings_actions;
+
+            displayRecords();
+            updateSummaryAndCharts();
+            updateHoldingsTable();
+            toggleHamburgerMenu();
+        }
+
+        function selectType(type) {
+            if (currentType === type) return;
+            currentType = type;
+            document.querySelectorAll('.toggle-group .toggle-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.type === type);
+            });
+            document.getElementById('stockCode').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('quantity').value = '';
+            document.getElementById('fee').value = '';
+            document.getElementById('note').value = '';
+            updateHoldingsTable();
+        }
+
+        function selectFilterType(type) {
+            if (filterType === type) return;
+            filterType = type;
+            document.querySelectorAll('.filter-toggle .toggle-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.filter === type);
+            });
+            displayedRecordsCount = recordsPerPage;
+            displayRecords();
+        }
+
+        function loadRecords() {
+            const records = localStorage.getItem('stockRecords');
+            return records ? JSON.parse(records) : [];
+        }
+
+        function saveRecords(records) {
+            localStorage.setItem('stockRecords', JSON.stringify(records));
+        }
+
+        function calculatePortfolio() {
+            const records = loadRecords();
+            const holdings = [];
+            let totalInvested = 0;
+            let realizedPL = 0;
+
+            records.forEach(record => {
+                if (record.type === 'buy') {
+                    holdings.push({
+                        stockCode: record.stockCode,
+                        quantity: record.quantity,
+                        buyPrice: record.price,
+                        buyDate: record.date,
+                        fee: record.fee || 0
+                    });
+                    totalInvested += (record.price * record.quantity) + (record.fee || 0);
+                } else if (record.type === 'sell') {
+                    let quantityToSell = record.quantity;
+                    const sellPrice = record.price;
+                    const sellFee = record.fee || 0;
+                    let sellProceeds = (sellPrice * quantityToSell) - sellFee;
+
+                    holdings.sort((a, b) => new Date(a.buyDate) - new Date(b.buyDate));
+                    for (let i = holdings.length - 1; i >= 0 && quantityToSell > 0; i--) {
+                        if (holdings[i].stockCode === record.stockCode) {
+                            const qtyToRemove = Math.min(quantityToSell, holdings[i].quantity);
+                            const buyCost = holdings[i].buyPrice * qtyToRemove + (holdings[i].fee * (qtyToRemove / holdings[i].quantity));
+                            const sellRevenue = sellPrice * qtyToRemove;
+                            realizedPL += sellRevenue - buyCost - (sellFee * (qtyToRemove / record.quantity));
+
+                            holdings[i].quantity -= qtyToRemove;
+                            quantityToSell -= qtyToRemove;
+                            if (holdings[i].quantity === 0) {
+                                holdings.splice(i, 1);
+                            }
+                        }
+                    }
+                }
+            });
+
+            return { holdings, totalInvested, realizedPL };
+        }
+
+        function calculateSellProfitLoss(stockCode, sellQuantity, sellPrice, sellFee) {
+            const records = loadRecords();
+            let quantityToSell = sellQuantity;
+            let totalPL = 0;
+
+            const buyRecords = records
+                .filter(r => r.type === 'buy' && r.stockCode === stockCode)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            let remainingBuyRecords = buyRecords.map(record => ({
+                quantity: record.quantity,
+                price: record.price,
+                fee: record.fee || 0
+            }));
+
+            for (let i = 0; i < remainingBuyRecords.length && quantityToSell > 0; i++) {
+                const buyRecord = remainingBuyRecords[i];
+                const qtyToUse = Math.min(quantityToSell, buyRecord.quantity);
+                const buyCost = buyRecord.price * qtyToUse + (buyRecord.fee * (qtyToUse / buyRecord.quantity));
+                const sellRevenue = sellPrice * qtyToUse;
+                const proportionalSellFee = sellFee * (qtyToUse / sellQuantity);
+                totalPL += sellRevenue - buyCost - proportionalSellFee;
+                quantityToSell -= qtyToUse;
+            }
+
+            return totalPL;
+        }
+
+        function updateBuyRecordNotes(stockCode, sellQuantity) {
+            const records = loadRecords();
+            let quantityToSell = sellQuantity;
+
+            const buyRecords = records
+                .filter(r => r.type === 'buy' && r.stockCode === stockCode)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            for (let i = 0; i < buyRecords.length && quantityToSell > 0; i++) {
+                const buyRecord = buyRecords[i];
+                const qtyToUse = Math.min(quantityToSell, buyRecord.quantity);
+                const originalIndex = records.findIndex(r =>
+                    r.date === buyRecord.date &&
+                    r.stockCode === buyRecord.stockCode &&
+                    r.type === buyRecord.type &&
+                    r.price === buyRecord.price &&
+                    r.quantity === buyRecord.quantity
+                );
+
+                let note = buyRecord.note || '';
+                const sellNote = qtyToUse === buyRecord.quantity ? '已賣出' : `已賣出${qtyToUse}股`;
+                note = note ? `${note}; ${sellNote}` : sellNote;
+
+                records[originalIndex].note = note;
+                quantityToSell -= qtyToUse;
+            }
+
+            saveRecords(records);
+        }
+
+        function updateHoldingsTable() {
+            const holdingsContainer = document.getElementById('holdings-table-container');
+            const holdingsTableBody = document.getElementById('holdingsTableBody');
+            holdingsTableBody.innerHTML = '';
+            holdingsContainer.style.display = currentType === 'sell' ? 'block' : 'none';
+
+            if (currentType !== 'sell') return;
+
+            const { holdings } = calculatePortfolio();
+            holdings.forEach((holding, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="stock-code">${holding.stockCode}</td>
+                    <td>${holding.quantity}</td>
+                    <td>${formatNumber(holding.buyPrice)}</td>
+                    <td>${holding.buyDate}</td>
+                    <td>
+                        <button class="sell-stock-btn" data-index="${index}">${translations[currentLanguage].sell_stock_btn}</button>
+                    </td>
+                `;
+                holdingsTableBody.appendChild(row);
+            });
+        }
+
+        function updatePortfolioValueChart() {
+            try {
+                if (portfolioValueChart) portfolioValueChart.destroy();
+                const ctx = document.getElementById('portfolioValueChart').getContext('2d');
+                const records = loadRecords();
+                const dates = [];
+                const values = [];
+
+                records.sort((a, b) => new Date(a.date) - new Date(b.date));
+                let holdings = [];
+                let totalValue = 0;
+
+                records.forEach(record => {
+                    const date = record.date.slice(0, 10);
+                    if (record.type === 'buy') {
+                        holdings.push({
+                            stockCode: record.stockCode,
+                            quantity: record.quantity,
+                            buyPrice: record.price,
+                            buyDate: record.date
+                        });
+                        totalValue += record.price * record.quantity + (record.fee || 0);
+                    } else {
+                        let quantityToSell = record.quantity;
+                        holdings.sort((a, b) => new Date(a.buyDate) - new Date(b.buyDate));
+                        for (let i = holdings.length - 1; i >= 0 && quantityToSell > 0; i--) {
+                            if (holdings[i].stockCode === record.stockCode) {
+                                const qtyToRemove = Math.min(quantityToSell, holdings[i].quantity);
+                                totalValue -= holdings[i].buyPrice * qtyToRemove;
+                                holdings[i].quantity -= qtyToRemove;
+                                quantityToSell -= qtyToRemove;
+                                if (holdings[i].quantity === 0) {
+                                    holdings.splice(i, 1);
+                                }
+                            }
+                        }
+                        totalValue -= (record.fee || 0);
+                    }
+                    if (!dates.includes(date)) {
+                        dates.push(date);
+                        values.push(totalValue);
+                    }
+                });
+
+                portfolioValueChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates.length ? dates : ['No Data'],
+                        datasets: [{
+                            label: translations[currentLanguage].portfolio_value_label,
+                            data: dates.length ? values : [0],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        scales: { y: { beginAtZero: true } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to update portfolio value chart:', error);
+            }
+        }
+
+        function updatePortfolioPieChart() {
+            try {
+                if (portfolioPieChart) portfolioPieChart.destroy();
+
+                const { holdings } = calculatePortfolio();
+                const stockValues = {};
+                holdings.forEach(holding => {
+                    stockValues[holding.stockCode] = (stockValues[holding.stockCode] || 0) + (holding.buyPrice * holding.quantity);
+                });
+                const labels = Object.keys(stockValues);
+                const data = Object.values(stockValues);
+
+                const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+
+                const ctx = document.getElementById('portfolioPieChart').getContext('2d');
+                portfolioPieChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels.length ? labels : ['No Holdings'],
+                        datasets: [{
+                            data: labels.length ? data : [1],
+                            backgroundColor: labels.length ? colors.slice(0, labels.length) : ['#ccc']
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to update portfolio pie chart:', error);
+            }
+        }
+
+        function updateSummaryAndCharts() {
+            const { holdings, totalInvested, realizedPL } = calculatePortfolio();
+            let portfolioValue = 0;
+            holdings.forEach(holding => {
+                portfolioValue += holding.buyPrice * holding.quantity;
+            });
+
+            document.getElementById('summary').innerHTML = `
+                <div>
+                    <div class="label" id="total-invested-label">${translations[currentLanguage].total_invested_label}</div>
+                    <div class="value" style="color: #3498db;">${formatNumber(totalInvested)}</div>
+                </div>
+                <div>
+                    <div class="label" id="realized-pl-label">${translations[currentLanguage].realized_pl_label}</div>
+                    <div class="value" style="color: ${realizedPL >= 0 ? '#27ae60' : '#e74c3c'};">${formatNumber(realizedPL)}</div>
+                </div>
+                <div>
+                    <div class="label" id="portfolio-value-label">${translations[currentLanguage].portfolio_value_label}</div>
+                    <div class="value" style="color: #3498db;">${formatNumber(portfolioValue)}</div>
+                </div>
+            `;
+
+            const portfolioTableBody = document.getElementById('portfolioTableBody');
+            portfolioTableBody.innerHTML = '';
+            holdings.forEach(holding => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="stock-code">${holding.stockCode}</td>
+                    <td>${holding.quantity}</td>
+                    <td>${formatNumber(holding.buyPrice)}</td>
+                    <td>${holding.buyDate}</td>
+                `;
+                portfolioTableBody.appendChild(row);
+            });
+
+            if (currentTab === 'overview') {
+                updatePortfolioPieChart();
+                updatePortfolioValueChart();
+            }
+        }
+
+        function displayRecords() {
+            const records = loadRecords();
+            const recordTableBody = document.getElementById('recordTableBody');
+            recordTableBody.innerHTML = '';
+
+            const filterStockCode = document.getElementById('filterStockCode').value.trim().toUpperCase();
+            let filteredRecords = records.filter(record => {
+                const matchesType = filterType === 'all' || record.type === filterType;
+                const matchesStockCode = !filterStockCode || record.stockCode.toUpperCase().includes(filterStockCode);
+                return matchesType && matchesStockCode;
+            });
+
+            const sortOrder = document.getElementById('sortOrder').value;
+            filteredRecords.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+            });
+
+            const recordsToDisplay = filteredRecords.slice(0, displayedRecordsCount);
+            recordsToDisplay.forEach((record, displayIndex) => {
+                const originalIndex = records.findIndex(r =>
+                    r.date === record.date &&
+                    r.stockCode === record.stockCode &&
+                    r.type === record.type &&
+                    r.price === record.price &&
+                    r.quantity === record.quantity
+                );
+                const row = document.createElement('tr');
+                const typeClass = record.type === 'buy' ? 'buy' : 'sell';
+                const typeText = record.type === 'buy' ? translations[currentLanguage].buy_btn : translations[currentLanguage].sell_btn;
+                row.innerHTML = `
+                    <td>${record.date}</td>
+                    <td class="stock-code">${record.stockCode}</td>
+                    <td><span class="${typeClass}">${typeText}</span></td>
+                    <td>${formatNumber(record.price)}</td>
+                    <td>${record.quantity}</td>
+                    <td>${record.fee ? formatNumber(record.fee) : '-'}</td>
+                    <td>${record.note || '-'}</td>
+                    <td>
+                        <button class="edit-btn" data-index="${originalIndex}">${translations[currentLanguage].edit_btn}</button>
+                        <button class="delete-btn" data-index="${originalIndex}">${translations[currentLanguage].delete_btn}</button>
+                    </td>
+                `;
+                recordTableBody.appendChild(row);
+            });
+
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            loadMoreBtn.classList.toggle('hidden', filteredRecords.length <= displayedRecordsCount);
+        }
+
+        function loadMoreRecords() {
+            displayedRecordsCount += recordsPerPage;
+            displayRecords();
+        }
+
+        function addRecord() {
+            const stockCode = document.getElementById('stockCode').value.trim().toUpperCase();
+            const price = parseFloat(document.getElementById('price').value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const fee = parseFloat(document.getElementById('fee').value) || 0;
+            let note = document.getElementById('note').value.trim();
+
+            if (!stockCode || isNaN(price) || price <= 0 || isNaN(quantity) || quantity <= 0) {
+                alert(translations[currentLanguage].invalid_input);
+                return;
+            }
+
+            if (currentType === 'sell') {
+                const { holdings } = calculatePortfolio();
+                const holding = holdings.find(h => h.stockCode === stockCode);
+                const totalAvailable = holding ? holding.quantity : 0;
+                if (quantity > totalAvailable) {
+                    alert(translations[currentLanguage].insufficient_quantity);
+                    return;
+                }
+
+                const profitLoss = calculateSellProfitLoss(stockCode, quantity, price, fee);
+                note = note ? `${note}; ${formatProfitLoss(profitLoss)}` : formatProfitLoss(profitLoss);
+
+                updateBuyRecordNotes(stockCode, quantity);
+            }
+
+            const records = loadRecords();
+            const newRecord = {
+                type: currentType,
+                stockCode,
+                price,
+                quantity,
+                fee,
+                note,
+                date: formatDate(new Date())
+            };
+
+            if (editingIndex !== null) {
+                records[editingIndex] = newRecord;
+                editingIndex = null;
+                document.getElementById('addButton').textContent = translations[currentLanguage].add_button;
+                document.getElementById('addButton').classList.remove('update');
+                document.getElementById('cancelButton').style.display = 'none';
+            } else {
+                records.push(newRecord);
+            }
+
+            saveRecords(records);
+            document.getElementById('stockCode').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('quantity').value = '';
+            document.getElementById('fee').value = '';
+            document.getElementById('note').value = '';
+            displayedRecordsCount = recordsPerPage;
+            displayRecords();
+            updateSummaryAndCharts();
+            updateHoldingsTable();
+        }
+
+        function editRecord(index) {
+            const records = loadRecords();
+            const record = records[index];
+            if (!record) {
+                alert(translations[currentLanguage].record_not_found);
+                return;
+            }
+            editingIndex = index;
+            selectType(record.type);
+            document.getElementById('stockCode').value = record.stockCode;
+            document.getElementById('price').value = record.price;
+            document.getElementById('quantity').value = record.quantity;
+            document.getElementById('fee').value = record.fee || '';
+            document.getElementById('note').value = record.note || '';
+            switchTab('add');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            const addButton = document.getElementById('addButton');
+            addButton.textContent = translations[currentLanguage].update_button;
+            addButton.classList.add('update');
+            document.getElementById('cancelButton').style.display = 'block';
+        }
+
+        function cancelEdit() {
+            document.getElementById('stockCode').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('quantity').value = '';
+            document.getElementById('fee').value = '';
+            document.getElementById('note').value = '';
+            document.getElementById('addButton').textContent = translations[currentLanguage].add_button;
+            document.getElementById('addButton').classList.remove('update');
+            document.getElementById('cancelButton').style.display = 'none';
+            editingIndex = null;
+            updateHoldingsTable();
+        }
+
+        function confirmDelete(index) {
+            if (confirm(translations[currentLanguage].confirm_delete)) {
+                const records = loadRecords();
+                records.splice(index, 1);
+                saveRecords(records);
+                displayedRecordsCount = recordsPerPage;
+                displayRecords();
+                updateSummaryAndCharts();
+                updateHoldingsTable();
+            }
+        }
+
+        function selectHoldingToSell(index) {
+            const { holdings } = calculatePortfolio();
+            const holding = holdings[index];
+            if (!holding) return;
+
+            selectType('sell');
+            document.getElementById('stockCode').value = holding.stockCode;
+            document.getElementById('quantity').value = holding.quantity;
+            document.getElementById('price').value = '';
+            document.getElementById('fee').value = '';
+            document.getElementById('note').value = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function clearFilters() {
+            document.getElementById('sortOrder').value = 'desc';
+            selectFilterType('all');
+            document.getElementById('filterStockCode').value = '';
+            displayedRecordsCount = recordsPerPage;
+            displayRecords();
+            updateSummaryAndCharts();
+        }
+
+        function exportToPdf() {
+            try {
+                const doc = new jsPDF();
+                doc.setFontSize(16);
+                doc.text(translations[currentLanguage].title, 20, 20);
+                const records = loadRecords();
+                const tableData = records.map(record => [
+                    record.date,
+                    record.stockCode,
+                    record.type === 'buy' ? translations[currentLanguage].buy_btn : translations[currentLanguage].sell_btn,
+                    formatNumber(record.price),
+                    record.quantity,
+                    record.fee ? formatNumber(record.fee) : '-',
+                    record.note || '-'
+                ]);
+
+                doc.autoTable({
+                    head: [
+                        [
+                            translations[currentLanguage].table_date,
+                            translations[currentLanguage].table_stock_code,
+                            translations[currentLanguage].table_type,
+                            translations[currentLanguage].table_price,
+                            translations[currentLanguage].table_quantity,
+                            translations[currentLanguage].table_fee,
+                            translations[currentLanguage].table_note
+                        ]
+                    ],
+                    body: tableData,
+                    startY: 30,
+                    styles: { fontSize: 10, cellPadding: 2 },
+                    headStyles: { fillColor: [44, 62, 80] },
+                    alternateRowStyles: { fillColor: [241, 243, 245] }
+                });
+
+                doc.save('stock_records.pdf');
+            } catch (error) {
+                console.error('PDF export failed:', error);
+                alert(translations[currentLanguage].pdf_export_failed);
+            }
+        }
+
+        function exportToCsv() {
+            try {
+                const records = loadRecords();
+                const headers = [
+                    translations.en.table_date,
+                    translations.en.table_stock_code,
+                    translations.en.table_type,
+                    translations.en.table_price,
+                    translations.en.table_quantity,
+                    translations.en.table_fee,
+                    translations.en.table_note
+                ].join(',');
+
+                const rows = records.map(record =>
+                    [
+                        `"${record.date}"`,
+                        `"${record.stockCode}"`,
+                        `"${record.type === 'buy' ? translations.en.buy_btn : translations.en.sell_btn}"`,
+                        record.price.toFixed(2),
+                        record.quantity,
+                        record.fee ? record.fee.toFixed(2) : '',
+                        `"${record.note || ''}"`
+                    ].join(',')
+                );
+
+                const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent([headers, ...rows].join('\n'));
+                const link = document.createElement('a');
+                link.setAttribute('href', csvContent);
+                link.setAttribute('download', 'stock_records.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('CSV export failed:', error);
+                alert(translations[currentLanguage].csv_export_failed);
+            }
+        }
+
+        function initialize() {
+            const elements = {
+                stockCode: document.getElementById('stockCode'),
+                price: document.getElementById('price'),
+                quantity: document.getElementById('quantity'),
+                fee: document.getElementById('fee'),
+                note: document.getElementById('note'),
+                addButton: document.getElementById('addButton'),
+                cancelButton: document.getElementById('cancelButton'),
+                sortOrder: document.getElementById('sortOrder'),
+                filterStockCode: document.getElementById('filterStockCode'),
+                clearFilters: document.getElementById('clearFilters'),
+                exportCsvBtn: document.getElementById('exportCsvBtn'),
+                loadMoreBtn: document.getElementById('loadMoreBtn'),
+                exportPdfBtn: document.getElementById('exportPdfBtn'),
+                recordTableBody: document.getElementById('recordTableBody'),
+                holdingsTableBody: document.getElementById('holdingsTableBody'),
+                hamburger: document.querySelector('.hamburger')
+            };
+
+            if (!Object.values(elements).every(el => el)) {
+                console.error('Some DOM elements are missing');
+                return;
+            }
+
+            document.querySelectorAll('.scope-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+            });
+
+            document.querySelectorAll('.language-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchLanguage(btn.dataset.lang));
+            });
+
+            elements.hamburger.addEventListener('click', toggleHamburgerMenu);
+
+            document.querySelectorAll('.toggle-group .toggle-btn').forEach(btn => {
+                btn.addEventListener('click', () => selectType(btn.dataset.type));
+            });
+
+            document.querySelectorAll('.filter-toggle .toggle-btn').forEach(btn => {
+                btn.addEventListener('click', () => selectFilterType(btn.dataset.filter));
+            });
+
+            elements.addButton.addEventListener('click', addRecord);
+            elements.cancelButton.addEventListener('click', cancelEdit);
+            elements.sortOrder.addEventListener('change', displayRecords);
+            elements.filterStockCode.addEventListener('input', displayRecords);
+            elements.clearFilters.addEventListener('click', clearFilters);
+            elements.exportCsvBtn.addEventListener('click', exportToCsv);
+            elements.loadMoreBtn.addEventListener('click', loadMoreRecords);
+            elements.exportPdfBtn.addEventListener('click', exportToPdf);
+
+            elements.recordTableBody.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                if (e.target.classList.contains('edit-btn')) {
+                    editRecord(parseInt(index));
+                } else if (e.target.classList.contains('delete-btn')) {
+                    confirmDelete(parseInt(index));
+                }
+            });
+
+            elements.holdingsTableBody.addEventListener('click', (e) => {
+                if (e.target.classList.contains('sell-stock-btn')) {
+                    const index = parseInt(e.target.dataset.index);
+                    selectHoldingToSell(index);
+                }
+            });
+
+            displayRecords();
+            updateSummaryAndCharts();
+            updateHoldingsTable();
+        }
+
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>
+<script>
+
+</script>
+</body>
+</html>
