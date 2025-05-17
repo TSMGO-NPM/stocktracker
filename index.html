@@ -1,21 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
-<link rel="icon" type="image/png" href="./favicon.png">
-<meta charset="UTF-8">
-<style type="text/css">
-
-</style>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-</head>
-<body>
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
+    <link rel="icon" type="image/png" href="./favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Tracker</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -99,7 +90,10 @@
             gap: 8px;
         }
         .language-switcher {
-            display: none;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
         }
         .language-btn {
             padding: 6px 9px;
@@ -108,11 +102,10 @@
             background: linear-gradient(135deg, #ecf0f1, #dfe6e9);
             color: #2c3e50;
             cursor: pointer;
-            font-size: 24px;
+            font-size: 14px;
             font-weight: 500;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease, transform 0.2s ease;
-            width: 100%;
         }
         .language-btn.selected {
             background: linear-gradient(135deg, #2c3e50, #34495e);
@@ -484,7 +477,7 @@
         #filter-buy-btn.selected {
             background: linear-gradient(135deg, #27ae60, #219653);
             color: white;
-            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0Prel: 0.4);
             transform: translateY(-2px);
         }
         #filter-sell-btn.selected {
@@ -708,8 +701,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 id="title">股海數簿</h1>
             <button class="hamburger">☰</button>
+            <h1 id="title">股海數簿</h1>
+            <div class="language-switcher">
+                <button class="language-btn selected" data-lang="zh-TW">繁</button>
+                <button class="language-btn" data-lang="zh-CN">簡</button>
+                <button class="language-btn" data-lang="en">EN</button>
+            </div>
         </div>
         <div class="hamburger-menu" id="hamburgerMenu">
             <div class="language-switcher">
@@ -837,7 +835,7 @@
                 </table>
             </div>
             <div id="chartContainer">
-                <h3 id="portfolio-value-over-time">投資組合價值隨時間變化</h3>
+                <h3 id="portfolio-value-over-time">投資組合價值變化</h3>
                 <canvas id="portfolioValueChart"></canvas>
             </div>
             <button id="exportPdfBtn">導出 PDF</button>
@@ -852,13 +850,13 @@
         let filterType = 'all';
         let displayedRecordsCount = 30;
         const recordsPerPage = 30;
-        const { jsPDF } = window.jspdf;
+        const jsPDF = window.jspdf ? window.jspdf.jsPDF : null;
         let currentLanguage = 'zh-TW';
         let currentTab = 'add';
 
         const translations = {
             'zh-TW': {
-                title: '股票數簿',
+                title: '股海數簿',
                 tab_add: '新增交易',
                 tab_records: '交易記錄',
                 tab_overview: '總覽與分析',
@@ -886,7 +884,7 @@
                 filter_all: '全部',
                 filter_buy: '買入',
                 filter_sell: '賣出',
-                clear_filters: '清除條件',
+                clear_filters: '清除',
                 export_csv: '匯出 CSV',
                 table_date: '日期',
                 table_stock_code: '股票代碼',
@@ -921,7 +919,7 @@
                 csv_export_failed: '匯出 CSV 失敗，請檢查！'
             },
             'zh-CN': {
-                title: '股票數簿',
+                title: '股海數簿',
                 tab_add: '新增交易',
                 tab_records: '交易记录',
                 tab_overview: '总览与分析',
@@ -943,13 +941,13 @@
                 cancel_button: '取消修改',
                 total_invested_label: '总投资',
                 realized_pl_label: '已实现损益',
-                portfolio_value_label: '投资组合价值',
+                portfolio_value_label: '投资组合价值变化',
                 sort_desc: '日期降序',
                 sort_asc: '日期升序',
                 filter_all: '全部',
                 filter_buy: '买入',
                 filter_sell: '卖出',
-                clear_filters: '清除条件',
+                clear_filters: '清除',
                 export_csv: '导出 CSV',
                 table_date: '日期',
                 table_stock_code: '股票代码',
@@ -994,13 +992,13 @@
                 stock_code_label: 'Stock Code',
                 stock_code_placeholder: 'Stock code',
                 price_label: 'Price per Share',
-                price_placeholder: 'Price per share',
+                price_placeholder: 'Price',
                 quantity_label: 'Quantity',
                 quantity_placeholder: 'Enter quantity',
-                fee_label: 'Fee (Optional)',
+                fee_label: 'Fee (Not required)',
                 fee_placeholder: 'Enter fee',
-                note_label: 'Note (Optional)',
-                note_placeholder: 'Enter note',
+                note_label: 'Note (Not required)',
+                note_placeholder: 'Enter remark',
                 add_button: 'Add Transaction',
                 update_button: 'Update Transaction',
                 cancel_button: 'Cancel Edit',
@@ -1012,7 +1010,7 @@
                 filter_all: 'All',
                 filter_buy: 'Buy',
                 filter_sell: 'Sell',
-                clear_filters: 'Clear Filters',
+                clear_filters: 'Clear',
                 export_csv: 'Export CSV',
                 table_date: 'Date',
                 table_stock_code: 'Stock Code',
@@ -1151,7 +1149,9 @@
             displayRecords();
             updateSummaryAndCharts();
             updateHoldingsTable();
-            toggleHamburgerMenu();
+            if (window.innerWidth <= 500) {
+                toggleHamburgerMenu();
+            }
         }
 
         function selectType(type) {
@@ -1189,45 +1189,72 @@
 
         function calculatePortfolio() {
             const records = loadRecords();
-            const holdings = [];
+            const holdings = {};
             let totalInvested = 0;
             let realizedPL = 0;
 
             records.forEach(record => {
+                const key = `${record.stockCode}-${record.date}`;
                 if (record.type === 'buy') {
-                    holdings.push({
-                        stockCode: record.stockCode,
+                    if (!holdings[record.stockCode]) {
+                        holdings[record.stockCode] = [];
+                    }
+                    holdings[record.stockCode].push({
+                        key,
                         quantity: record.quantity,
                         buyPrice: record.price,
                         buyDate: record.date,
-                        fee: record.fee || 0
+                        fee: record.fee || 0,
+                        remainingQuantity: record.quantity
                     });
                     totalInvested += (record.price * record.quantity) + (record.fee || 0);
                 } else if (record.type === 'sell') {
                     let quantityToSell = record.quantity;
                     const sellPrice = record.price;
                     const sellFee = record.fee || 0;
-                    let sellProceeds = (sellPrice * quantityToSell) - sellFee;
 
-                    holdings.sort((a, b) => new Date(a.buyDate) - new Date(b.buyDate));
-                    for (let i = holdings.length - 1; i >= 0 && quantityToSell > 0; i--) {
-                        if (holdings[i].stockCode === record.stockCode) {
-                            const qtyToRemove = Math.min(quantityToSell, holdings[i].quantity);
-                            const buyCost = holdings[i].buyPrice * qtyToRemove + (holdings[i].fee * (qtyToRemove / holdings[i].quantity));
-                            const sellRevenue = sellPrice * qtyToRemove;
-                            realizedPL += sellRevenue - buyCost - (sellFee * (qtyToRemove / record.quantity));
-
-                            holdings[i].quantity -= qtyToRemove;
-                            quantityToSell -= qtyToRemove;
-                            if (holdings[i].quantity === 0) {
-                                holdings.splice(i, 1);
+                    if (holdings[record.stockCode]) {
+                        holdings[record.stockCode].sort((a, b) => new Date(a.buyDate) - new Date(b.buyDate));
+                        for (let i = 0; i < holdings[record.stockCode].length && quantityToSell > 0; i++) {
+                            const holding = holdings[record.stockCode][i];
+                            if (holding.remainingQuantity > 0) {
+                                const qtyToRemove = Math.min(quantityToSell, holding.remainingQuantity);
+                                const buyCost = holding.buyPrice * qtyToRemove + (holding.fee * (qtyToRemove / holding.quantity));
+                                const sellRevenue = sellPrice * qtyToRemove;
+                                realizedPL += sellRevenue - buyCost - (sellFee * (qtyToRemove / record.quantity));
+                                holding.remainingQuantity -= qtyToRemove;
+                                quantityToSell -= qtyToRemove;
                             }
                         }
                     }
                 }
             });
 
-            return { holdings, totalInvested, realizedPL };
+            const aggregatedHoldings = [];
+            for (const stockCode in holdings) {
+                const stockHoldings = holdings[stockCode].filter(h => h.remainingQuantity > 0);
+                if (stockHoldings.length > 0) {
+                    let totalQuantity = 0;
+                    let totalCost = 0;
+                    let earliestDate = stockHoldings[0].buyDate;
+                    stockHoldings.forEach(h => {
+                        totalQuantity += h.remainingQuantity;
+                        totalCost += h.buyPrice * h.remainingQuantity;
+                        if (new Date(h.buyDate) < new Date(earliestDate)) {
+                            earliestDate = h.buyDate;
+                        }
+                    });
+                    const avgBuyPrice = totalCost / totalQuantity;
+                    aggregatedHoldings.push({
+                        stockCode,
+                        quantity: totalQuantity,
+                        buyPrice: avgBuyPrice,
+                        buyDate: earliestDate
+                    });
+                }
+            }
+
+            return { holdings: aggregatedHoldings, totalInvested, realizedPL };
         }
 
         function calculateSellProfitLoss(stockCode, sellQuantity, sellPrice, sellFee) {
@@ -1239,15 +1266,25 @@
                 .filter(r => r.type === 'buy' && r.stockCode === stockCode)
                 .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            let remainingBuyRecords = buyRecords.map(record => ({
-                quantity: record.quantity,
-                price: record.price,
-                fee: record.fee || 0
-            }));
+            let remainingBuyRecords = buyRecords.map(record => {
+                const sellRecords = records.filter(r =>
+                    r.type === 'sell' &&
+                    r.stockCode === stockCode &&
+                    new Date(r.date) > new Date(record.date)
+                );
+                let soldQuantity = sellRecords.reduce((sum, r) => sum + r.quantity, 0);
+                return {
+                    quantity: record.quantity,
+                    remainingQuantity: record.quantity - soldQuantity,
+                    price: record.price,
+                    fee: record.fee || 0,
+                    date: record.date
+                };
+            }).filter(r => r.remainingQuantity > 0);
 
             for (let i = 0; i < remainingBuyRecords.length && quantityToSell > 0; i++) {
                 const buyRecord = remainingBuyRecords[i];
-                const qtyToUse = Math.min(quantityToSell, buyRecord.quantity);
+                const qtyToUse = Math.min(quantityToSell, buyRecord.remainingQuantity);
                 const buyCost = buyRecord.price * qtyToUse + (buyRecord.fee * (qtyToUse / buyRecord.quantity));
                 const sellRevenue = sellPrice * qtyToUse;
                 const proportionalSellFee = sellFee * (qtyToUse / sellQuantity);
@@ -1268,7 +1305,16 @@
 
             for (let i = 0; i < buyRecords.length && quantityToSell > 0; i++) {
                 const buyRecord = buyRecords[i];
-                const qtyToUse = Math.min(quantityToSell, buyRecord.quantity);
+                const sellRecords = records.filter(r =>
+                    r.type === 'sell' &&
+                    r.stockCode === stockCode &&
+                    new Date(r.date) > new Date(buyRecord.date)
+                );
+                let soldQuantity = sellRecords.reduce((sum, r) => sum + r.quantity, 0);
+                let remainingQuantity = buyRecord.quantity - soldQuantity;
+                if (remainingQuantity <= 0) continue;
+
+                const qtyToUse = Math.min(quantityToSell, remainingQuantity);
                 const originalIndex = records.findIndex(r =>
                     r.date === buyRecord.date &&
                     r.stockCode === buyRecord.stockCode &&
@@ -1313,6 +1359,10 @@
         }
 
         function updatePortfolioValueChart() {
+            if (!window.Chart) {
+                console.error('Chart.js not loaded');
+                return;
+            }
             try {
                 if (portfolioValueChart) portfolioValueChart.destroy();
                 const ctx = document.getElementById('portfolioValueChart').getContext('2d');
@@ -1321,31 +1371,38 @@
                 const values = [];
 
                 records.sort((a, b) => new Date(a.date) - new Date(b.date));
-                let holdings = [];
+                let holdings = {};
                 let totalValue = 0;
 
                 records.forEach(record => {
                     const date = record.date.slice(0, 10);
                     if (record.type === 'buy') {
-                        holdings.push({
-                            stockCode: record.stockCode,
+                        if (!holdings[record.stockCode]) {
+                            holdings[record.stockCode] = [];
+                        }
+                        holdings[record.stockCode].push({
                             quantity: record.quantity,
                             buyPrice: record.price,
-                            buyDate: record.date
+                            buyDate: record.date,
+                            fee: record.fee || 0
                         });
                         totalValue += record.price * record.quantity + (record.fee || 0);
                     } else {
                         let quantityToSell = record.quantity;
-                        holdings.sort((a, b) => new Date(a.buyDate) - new Date(b.buyDate));
-                        for (let i = holdings.length - 1; i >= 0 && quantityToSell > 0; i--) {
-                            if (holdings[i].stockCode === record.stockCode) {
-                                const qtyToRemove = Math.min(quantityToSell, holdings[i].quantity);
-                                totalValue -= holdings[i].buyPrice * qtyToRemove;
-                                holdings[i].quantity -= qtyToRemove;
+                        if (holdings[record.stockCode]) {
+                            holdings[record.stockCode].sort((a, b) => new Date(a.buyDate) - new Date(b.buyDate));
+                            for (let i = holdings[record.stockCode].length - 1; i >= 0 && quantityToSell > 0; i--) {
+                                const holding = holdings[record.stockCode][i];
+                                const qtyToRemove = Math.min(quantityToSell, holding.quantity);
+                                totalValue -= holding.buyPrice * qtyToRemove;
+                                holding.quantity -= qtyToRemove;
                                 quantityToSell -= qtyToRemove;
-                                if (holdings[i].quantity === 0) {
-                                    holdings.splice(i, 1);
+                                if (holding.quantity === 0) {
+                                    holdings[record.stockCode].splice(i, 1);
                                 }
+                            }
+                            if (holdings[record.stockCode].length === 0) {
+                                delete holdings[record.stockCode];
                             }
                         }
                         totalValue -= (record.fee || 0);
@@ -1379,6 +1436,10 @@
         }
 
         function updatePortfolioPieChart() {
+            if (!window.Chart) {
+                console.error('Chart.js not loaded');
+                return;
+            }
             try {
                 if (portfolioPieChart) portfolioPieChart.destroy();
 
@@ -1640,6 +1701,11 @@
         }
 
         function exportToPdf() {
+            if (!jsPDF) {
+                console.error('jsPDF not loaded');
+                alert(translations[currentLanguage].pdf_export_failed);
+                return;
+            }
             try {
                 const doc = new jsPDF();
                 doc.setFontSize(16);
@@ -1706,98 +1772,88 @@
                     ].join(',')
                 );
 
-                const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent([headers, ...rows].join('\n'));
+                const csvContent = '\uFEFF' + [headers, ...rows].join('\n');
+                const blob = new Blob([csvContent], { type:'text/csv;charset=utf-8' });
                 const link = document.createElement('a');
-                link.setAttribute('href', csvContent);
-                link.setAttribute('download', 'stock_records.csv');
-                document.body.appendChild(link);
+                link.href = URL.createObjectURL(blob);
+                link.download = 'stock_records.csv';
                 link.click();
-                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
             } catch (error) {
                 console.error('CSV export failed:', error);
                 alert(translations[currentLanguage].csv_export_failed);
             }
         }
 
-        function initialize() {
-            const elements = {
-                stockCode: document.getElementById('stockCode'),
-                price: document.getElementById('price'),
-                quantity: document.getElementById('quantity'),
-                fee: document.getElementById('fee'),
-                note: document.getElementById('note'),
-                addButton: document.getElementById('addButton'),
-                cancelButton: document.getElementById('cancelButton'),
-                sortOrder: document.getElementById('sortOrder'),
-                filterStockCode: document.getElementById('filterStockCode'),
-                clearFilters: document.getElementById('clearFilters'),
-                exportCsvBtn: document.getElementById('exportCsvBtn'),
-                loadMoreBtn: document.getElementById('loadMoreBtn'),
-                exportPdfBtn: document.getElementById('exportPdfBtn'),
-                recordTableBody: document.getElementById('recordTableBody'),
-                holdingsTableBody: document.getElementById('holdingsTableBody'),
-                hamburger: document.querySelector('.hamburger')
-            };
+    $(document).ready(function() {
+        switchLanguage('zh-TW');
+        switchTab('add');
 
-            if (!Object.values(elements).every(el => el)) {
-                console.error('Some DOM elements are missing');
-                return;
-            }
+        $('.scope-btn').click(function() {
+            switchTab($(this).data('tab'));
+        });
 
-            document.querySelectorAll('.scope-btn').forEach(btn => {
-                btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-            });
+        $('.toggle-btn[data-type]').click(function() {
+            selectType($(this).data('type'));
+        });
 
-            document.querySelectorAll('.language-btn').forEach(btn => {
-                btn.addEventListener('click', () => switchLanguage(btn.dataset.lang));
-            });
+        $('.language-btn').click(function() {
+            switchLanguage($(this).data('lang'));
+        });
 
-            elements.hamburger.addEventListener('click', toggleHamburgerMenu);
+        $('.hamburger').click(toggleHamburgerMenu);
 
-            document.querySelectorAll('.toggle-group .toggle-btn').forEach(btn => {
-                btn.addEventListener('click', () => selectType(btn.dataset.type));
-            });
+        $('#addButton').click(addRecord);
 
-            document.querySelectorAll('.filter-toggle .toggle-btn').forEach(btn => {
-                btn.addEventListener('click', () => selectFilterType(btn.dataset.filter));
-            });
+        $('#cancelButton').click(cancelEdit);
 
-            elements.addButton.addEventListener('click', addRecord);
-            elements.cancelButton.addEventListener('click', cancelEdit);
-            elements.sortOrder.addEventListener('change', displayRecords);
-            elements.filterStockCode.addEventListener('input', displayRecords);
-            elements.clearFilters.addEventListener('click', clearFilters);
-            elements.exportCsvBtn.addEventListener('click', exportToCsv);
-            elements.loadMoreBtn.addEventListener('click', loadMoreRecords);
-            elements.exportPdfBtn.addEventListener('click', exportToPdf);
+        $('#recordTableBody').on('click', '.edit-btn', function() {
+            editRecord($(this).data('index'));
+        });
 
-            elements.recordTableBody.addEventListener('click', (e) => {
-                const index = e.target.dataset.index;
-                if (e.target.classList.contains('edit-btn')) {
-                    editRecord(parseInt(index));
-                } else if (e.target.classList.contains('delete-btn')) {
-                    confirmDelete(parseInt(index));
-                }
-            });
+        $('#recordTableBody').on('click', '.delete-btn', function() {
+            confirmDelete($(this).data('index'));
+        });
 
-            elements.holdingsTableBody.addEventListener('click', (e) => {
-                if (e.target.classList.contains('sell-stock-btn')) {
-                    const index = parseInt(e.target.dataset.index);
-                    selectHoldingToSell(index);
-                }
-            });
+        $('#holdingsTableBody').on('click', '.sell-stock-btn', function() {
+            selectHoldingToSell($(this).data('index'));
+        });
 
+        $('#sortOrder, #filterStockCode').on('change input', function() {
+            displayedRecordsCount = recordsPerPage;
             displayRecords();
-            updateSummaryAndCharts();
-            updateHoldingsTable();
-        }
+        });
 
-        document.addEventListener('DOMContentLoaded', initialize);
-    </script>
-</body>
-</html>
-<script>
+        $('#filter-all-btn').click(function() {
+            selectFilterType('all');
+        });
 
+        $('#filter-buy-btn').click(function() {
+            selectFilterType('buy');
+        });
+
+        $('#filter-sell-btn').click(function() {
+            selectFilterType('sell');
+        });
+
+        $('#clearFilters').click(clearFilters);
+
+        $('#loadMoreBtn').click(loadMoreRecords);
+
+        $('#exportPdfBtn').click(exportToPdf);
+
+        $('#exportCsvBtn').click(exportToCsv);
+
+        $(window).resize(function() {
+            if (window.innerWidth > 500) {
+                $('#hamburgerMenu').removeClass('open');
+            }
+        });
+
+        updateSummaryAndCharts();
+        updateHoldingsTable();
+        displayRecords();
+    });
 </script>
 </body>
 </html>
