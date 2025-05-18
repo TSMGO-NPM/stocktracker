@@ -366,7 +366,7 @@
             width: 70px;
             text-align: center;
             margin-right: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 6ुआ: rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease, transform 0.2s ease;
         }
         .edit-btn {
@@ -477,7 +477,7 @@
         #filter-buy-btn.selected {
             background: linear-gradient(135deg, #27ae60, #219653);
             color: white;
-            box-shadow: 0 4px 12px rgba(39, 174, 96, 0Prel: 0.4);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
             transform: translateY(-2px);
         }
         #filter-sell-btn.selected {
@@ -982,7 +982,7 @@
                 csv_export_failed: '导出 CSV 失败，请检查！'
             },
             'en': {
-                title: '股海數簿',
+                title: 'Stock Tracker',
                 tab_add: 'Add Transaction',
                 tab_records: 'Transaction Records',
                 tab_overview: 'Overview & Analysis',
@@ -995,10 +995,10 @@
                 price_placeholder: 'Price',
                 quantity_label: 'Quantity',
                 quantity_placeholder: 'Enter quantity',
-                fee_label: 'Fee (Not required)',
+                fee_label: 'Fee (Optional)',
                 fee_placeholder: 'Enter fee',
-                note_label: 'Note (Not required)',
-                note_placeholder: 'Enter remark',
+                note_label: 'Note (Optional)',
+                note_placeholder: 'Enter note',
                 add_button: 'Add Transaction',
                 update_button: 'Update Transaction',
                 cancel_button: 'Cancel Edit',
@@ -1149,9 +1149,6 @@
             displayRecords();
             updateSummaryAndCharts();
             updateHoldingsTable();
-            if (window.innerWidth <= 500) {
-                toggleHamburgerMenu();
-            }
         }
 
         function selectType(type) {
@@ -1704,7 +1701,7 @@
             if (!jsPDF) {
                 console.error('jsPDF not loaded');
                 alert(translations[currentLanguage].pdf_export_failed);
-                return;
+ Grail: return;
             }
             try {
                 const doc = new jsPDF();
@@ -1735,14 +1732,26 @@
                     ],
                     body: tableData,
                     startY: 30,
-                    styles: { fontSize: 10, cellPadding: 2 },
-                    headStyles: { fillColor: [44, 62, 80] },
-                    alternateRowStyles: { fillColor: [241, 243, 245] }
+                    styles: { fontSize:                    10, cellPadding: 5 },
+                    headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255] },
+                    bodyStyles: { textColor: [44, 62, 80] }
                 });
 
-                doc.save('stock_records.pdf');
+                const { holdings, totalInvested, realizedPL } = calculatePortfolio();
+                let portfolioValue = 0;
+                holdings.forEach(holding => {
+                    portfolioValue += holding.buyPrice * holding.quantity;
+                });
+
+                doc.setFontSize(12);
+                const summaryY = doc.lastAutoTable.finalY + 20;
+                doc.text(`${translations[currentLanguage].total_invested_label}: ${formatNumber(totalInvested)}`, 20, summaryY);
+                doc.text(`${translations[currentLanguage].realized_pl_label}: ${formatNumber(realizedPL)}`, 20, summaryY + 10);
+                doc.text(`${translations[currentLanguage].portfolio_value_label}: ${formatNumber(portfolioValue)}`, 20, summaryY + 20);
+
+                doc.save('Stock_Tracker.pdf');
             } catch (error) {
-                console.error('PDF export failed:', error);
+                console.error('Failed to export PDF:', error);
                 alert(translations[currentLanguage].pdf_export_failed);
             }
         }
@@ -1751,109 +1760,126 @@
             try {
                 const records = loadRecords();
                 const headers = [
-                    translations.en.table_date,
-                    translations.en.table_stock_code,
-                    translations.en.table_type,
-                    translations.en.table_price,
-                    translations.en.table_quantity,
-                    translations.en.table_fee,
-                    translations.en.table_note
-                ].join(',');
+                    translations[currentLanguage].table_date,
+                    translations[currentLanguage].table_stock_code,
+                    translations[currentLanguage].table_type,
+                    translations[currentLanguage].table_price,
+                    translations[currentLanguage].table_quantity,
+                    translations[currentLanguage].table_fee,
+                    translations[currentLanguage].table_note
+                ];
 
-                const rows = records.map(record =>
-                    [
-                        `"${record.date}"`,
-                        `"${record.stockCode}"`,
-                        `"${record.type === 'buy' ? translations.en.buy_btn : translations.en.sell_btn}"`,
-                        record.price.toFixed(2),
+                const csvRows = [
+                    headers.map(header => `"${header}"`).join(',')
+                ];
+
+                records.forEach(record => {
+                    const row = [
+                        record.date,
+                        record.stockCode,
+                        record.type === 'buy' ? translations[currentLanguage].buy_btn : translations[currentLanguage].sell_btn,
+                        formatNumber(record.price),
                         record.quantity,
-                        record.fee ? record.fee.toFixed(2) : '',
-                        `"${record.note || ''}"`
-                    ].join(',')
-                );
+                        record.fee ? formatNumber(record.fee) : '-',
+                        record.note ? `"${record.note.replace(/"/g, '""')}"` : '-'
+                    ];
+                    csvRows.push(row.join(','));
+                });
 
-                const csvContent = '\uFEFF' + [headers, ...rows].join('\n');
-                const blob = new Blob([csvContent], { type:'text/csv;charset=utf-8' });
+                const csvContent = csvRows.join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'stock_records.csv';
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'Stock_Tracker.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
                 link.click();
-                URL.revokeObjectURL(link.href);
+                document.body.removeChild(link);
             } catch (error) {
-                console.error('CSV export failed:', error);
+                console.error('Failed to export CSV:', error);
                 alert(translations[currentLanguage].csv_export_failed);
             }
         }
 
-    $(document).ready(function() {
-        switchLanguage('zh-TW');
-        switchTab('add');
+        $(document).ready(function () {
+            $('.scope-btn').click(function () {
+                switchTab($(this).data('tab'));
+            });
 
-        $('.scope-btn').click(function() {
-            switchTab($(this).data('tab'));
-        });
+            $('.toggle-btn[data-type]').click(function () {
+                selectType($(this).data('type'));
+            });
 
-        $('.toggle-btn[data-type]').click(function() {
-            selectType($(this).data('type'));
-        });
+            $('.language-btn').click(function () {
+                switchLanguage($(this).data('lang'));
+            });
 
-        $('.language-btn').click(function() {
-            switchLanguage($(this).data('lang'));
-        });
+            $('.hamburger').click(function () {
+                toggleHamburgerMenu();
+            });
 
-        $('.hamburger').click(toggleHamburgerMenu);
+            $('#addButton').click(function () {
+                addRecord();
+            });
 
-        $('#addButton').click(addRecord);
+            $('#cancelButton').click(function () {
+                cancelEdit();
+            });
 
-        $('#cancelButton').click(cancelEdit);
+            $(document).on('click', '.edit-btn', function () {
+                editRecord($(this).data('index'));
+            });
 
-        $('#recordTableBody').on('click', '.edit-btn', function() {
-            editRecord($(this).data('index'));
-        });
+            $(document).on('click', '.delete-btn', function () {
+                confirmDelete($(this).data('index'));
+            });
 
-        $('#recordTableBody').on('click', '.delete-btn', function() {
-            confirmDelete($(this).data('index'));
-        });
+            $(document).on('click', '.sell-stock-btn', function () {
+                selectHoldingToSell($(this).data('index'));
+            });
 
-        $('#holdingsTableBody').on('click', '.sell-stock-btn', function() {
-            selectHoldingToSell($(this).data('index'));
-        });
+            $('#sortOrder').change(function () {
+                displayedRecordsCount = recordsPerPage;
+                displayRecords();
+            });
 
-        $('#sortOrder, #filterStockCode').on('change input', function() {
-            displayedRecordsCount = recordsPerPage;
+            $('.filter-toggle .toggle-btn').click(function () {
+                selectFilterType($(this).data('filter'));
+            });
+
+            $('#filterStockCode').on('input', function () {
+                displayedRecordsCount = recordsPerPage;
+                displayRecords();
+            });
+
+            $('#clearFilters').click(function () {
+                clearFilters();
+            });
+
+            $('#loadMoreBtn').click(function () {
+                loadMoreRecords();
+            });
+
+            $('#exportPdfBtn').click(function () {
+                exportToPdf();
+            });
+
+            $('#exportCsvBtn').click(function () {
+                exportToCsv();
+            });
+
+            $(window).resize(function () {
+                if ($(window).width() > 500) {
+                    $('#hamburgerMenu').removeClass('open');
+                }
+            });
+
             displayRecords();
+            updateSummaryAndCharts();
+            updateHoldingsTable();
+            switchLanguage(currentLanguage);
         });
-
-        $('#filter-all-btn').click(function() {
-            selectFilterType('all');
-        });
-
-        $('#filter-buy-btn').click(function() {
-            selectFilterType('buy');
-        });
-
-        $('#filter-sell-btn').click(function() {
-            selectFilterType('sell');
-        });
-
-        $('#clearFilters').click(clearFilters);
-
-        $('#loadMoreBtn').click(loadMoreRecords);
-
-        $('#exportPdfBtn').click(exportToPdf);
-
-        $('#exportCsvBtn').click(exportToCsv);
-
-        $(window).resize(function() {
-            if (window.innerWidth > 500) {
-                $('#hamburgerMenu').removeClass('open');
-            }
-        });
-
-        updateSummaryAndCharts();
-        updateHoldingsTable();
-        displayRecords();
-    });
-</script>
+    </script>
 </body>
 </html>
