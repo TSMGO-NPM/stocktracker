@@ -1087,11 +1087,13 @@
             }
         }
 
-        function switchLanguage(lang) {
-            currentLanguage = lang;
-            document.querySelectorAll('.language-btn').forEach(btn => {
+                function switchLanguage(lang) {
+                currentLanguage = lang;
+                document.querySelectorAll('.language-btn').forEach(btn => {
                 btn.classList.toggle('selected', btn.dataset.lang === lang);
-            });
+        });
+
+            document.getElementById('hamburgerMenu').classList.remove('open');
 
             const t = translations[lang];
             document.getElementById('title').textContent = t.title;
@@ -1146,10 +1148,10 @@
             document.getElementById('holdings-buy-date').textContent = t.holdings_buy_date;
             document.getElementById('holdings-actions').textContent = t.holdings_actions;
 
-            displayRecords();
-            updateSummaryAndCharts();
-            updateHoldingsTable();
-        }
+    displayRecords();
+    updateSummaryAndCharts();
+    updateHoldingsTable();
+}
 
         function selectType(type) {
             if (currentType === type) return;
